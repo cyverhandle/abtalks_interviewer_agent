@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Interview Agent — Prep Suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #070a13;
+    --panel: rgba(255,255,255,.035);
+    --panel-2: rgba(255,255,255,.06);
+    --panel-3: rgba(255,255,255,.09);
+    --border: rgba(255,255,255,.09);
+    --border-2: rgba(255,255,255,.16);
+    --text: #eef1f8;
+    --muted: #93a0b8;
+    --accent: #6d8dff;
+    --accent-2: #b07bff;
+    --cyan: #38e0e0;
+    --good: #34d399;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --radius: 16px;
+    --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+  /* ---------- ambient background ---------- */
+  .bg-mesh { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
+  .bg-mesh::before, .bg-mesh::after, .bg-mesh .blob {
+    content: ""; position: absolute; border-radius: 50%; filter: blur(90px); opacity: .5;
+  }
+  .bg-mesh::before { width: 520px; height: 520px; left: -140px; top: -180px;
+    background: radial-gradient(circle, rgba(109,141,255,.35), transparent 65%); animation: drift 26s ease-in-out infinite alternate; }
+  .bg-mesh::after { width: 460px; height: 460px; right: -120px; bottom: -160px;
+    background: radial-gradient(circle, rgba(176,123,255,.30), transparent 65%); animation: drift 32s ease-in-out infinite alternate-reverse; }
+  .bg-mesh .blob { width: 380px; height: 380px; left: 45%; top: 30%;
+    background: radial-gradient(circle, rgba(56,224,224,.16), transparent 65%); animation: drift 38s ease-in-out infinite alternate; }
+  @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(60px,40px) scale(1.15); } }
+
+  .grad-text {
+    background: linear-gradient(92deg, var(--accent), var(--accent-2) 55%, var(--cyan));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hidden { display: none !important; }
+
+  /* ---------- sidebar ---------- */
+  .sidebar {
+    width: 312px; min-width: 312px;
+    background: rgba(13,17,28,.72);
+    border-right: 1px solid var(--border);
+    backdrop-filter: blur(18px);
+    display: flex; flex-direction: column;
+    padding: 20px 18px; gap: 14px; overflow-y: auto;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 42px; height: 42px; border-radius: 13px; flex: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; font-family: "Sora", sans-serif; font-weight: 800; font-size: 17px;
+    box-shadow: 0 8px 24px rgba(109,141,255,.4);
+  }
+  .brand h1 { font-family: "Sora", sans-serif; font-size: 15.5px; letter-spacing: .2px; }
+  .brand p { font-size: 10.5px; color: var(--muted); margin-top: 2px; letter-spacing: .4px; }
+
+  /* ---- stylish segmented nav with sliding pill ---- */
+  .tabs { position: relative; display: grid; grid-template-columns: 1fr 1fr; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 5px; overflow: hidden; }
+  .nav-slider { position: absolute; top: 5px; left: 0; width: calc(50% - 5px); height: calc(100% - 10px); border-radius: 10px; background: linear-gradient(135deg, #6d8dff, #b07bff); box-shadow: 0 6px 18px rgba(109,141,255,.45), inset 0 1px 0 rgba(255,255,255,.3); transition: transform .34s cubic-bezier(.22,1,.36,1); z-index: 0; }
+  .tab { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 0; border: none; background: transparent; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--muted); cursor: pointer; transition: color .18s ease, transform .18s ease; }
+  .tab:hover:not(.active) { color: var(--text); transform: translateY(-1px); }
+  .tab.active { color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.3); }
+  .tab-badge { min-width: 17px; height: 17px; padding: 0 5px; border-radius: 99px; background: rgba(0,0,0,.28); font-size: 10px; font-weight: 700; display: grid; place-items: center; }
+
+  .side-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.4px; color: var(--muted); margin: 4px 2px 8px; font-weight: 600; }
+
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px;
+    transition: transform .15s ease, border-color .15s ease;
+  }
+  .stat-card:hover { transform: translateY(-1px); border-color: var(--border-2); }
+  .stat-card .num { font-family: "Sora", sans-serif; font-size: 20px; font-weight: 700; line-height: 1.1; }
+  .stat-card .lbl { font-size: 10.5px; color: var(--muted); margin-top: 3px; letter-spacing: .3px; }
+  .stat-card.glow .num { background: linear-gradient(92deg, var(--accent), var(--cyan)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  .progress-box { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+  .progress-top { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); margin-bottom: 8px; }
+  .progress-top b { color: var(--text); font-size: 13px; }
+  .bar { height: 6px; background: rgba(255,255,255,.06); border-radius: 99px; overflow: hidden; }
+  .bar > div { height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .5s ease; }
+
+  .mastery { display: flex; flex-direction: column; gap: 8px; }
+  .mastery .row { display: grid; grid-template-columns: 96px 1fr 34px; align-items: center; gap: 8px; font-size: 11px; }
+  .mastery .row .t { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mastery .track { height: 6px; background: rgba(255,255,255,.06); border-radius: 99px; overflow: hidden; }
+  .mastery .fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--cyan)); transition: width .6s ease; }
+  .mastery .v { font-family: var(--mono); color: var(--muted); text-align: right; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 10.5px; padding: 3px 9px; border-radius: 99px; background: rgba(109,141,255,.12); border: 1px solid rgba(109,141,255,.28); color: #c3cfff; }
+  .chip.done { background: rgba(52,211,153,.1); border-color: rgba(52,211,153,.3); color: var(--good); text-decoration: line-through; opacity: .75; }
+
+  .recent { display: flex; flex-direction: column; gap: 8px; }
+  .recent-item {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px;
+    cursor: pointer; transition: all .15s ease; text-align: left; color: var(--text); font: inherit;
+  }
+  .recent-item:hover { border-color: var(--border-2); transform: translateX(2px); }
+  .recent-item .r-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .recent-item .r-name { font-size: 12.5px; font-weight: 600; }
+  .recent-item .r-score { font-family: var(--mono); font-size: 11.5px; color: var(--cyan); }
+  .recent-item .r-sub { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+
+  .side-foot { margin-top: auto; border-top: 1px solid var(--border); padding-top: 12px; font-size: 11px; color: var(--muted); line-height: 1.7; }
+
+  /* ---------- main ---------- */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
+
+  .mob-nav { display: none; position: relative; padding: 5px; gap: 0; border-bottom: 1px solid var(--border); background: rgba(13,17,28,.6); backdrop-filter: blur(12px); }
+  .mob-nav .tab { flex: 1 1 0; }
+
+  /* ----- dashboard view ----- */
+  .view { flex: 1; overflow-y: auto; padding: 30px 36px; }
+  .hero { max-width: 1000px; }
+  .hero .kicker { font-size: 11.5px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--cyan); }
+  .hero h2 { font-family: "Sora", sans-serif; font-size: clamp(26px, 3.4vw, 40px); font-weight: 800; margin: 10px 0 10px; line-height: 1.15; }
+  .hero p { color: var(--muted); font-size: 14.5px; max-width: 640px; line-height: 1.7; }
+  .hero .cta-row { display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px; padding: 12px 22px; border-radius: 13px;
+    border: 1px solid var(--border-2); background: var(--panel-2); color: var(--text); font: inherit;
+    font-weight: 600; font-size: 13.5px; cursor: pointer; transition: all .18s ease;
+  }
+  .btn:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.28); box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: #fff; box-shadow: 0 10px 28px rgba(109,141,255,.35); }
+  .btn-primary:hover { box-shadow: 0 14px 36px rgba(109,141,255,.5); }
+  .btn-ghost { background: transparent; border-color: var(--border); color: var(--muted); }
+  .btn-ghost:hover { color: var(--text); }
+
+  .dash-grid { max-width: 1000px; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 26px; }
+  .dash-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; backdrop-filter: blur(10px); transition: transform .18s ease, border-color .18s ease; }
+  .dash-card:hover { transform: translateY(-3px); border-color: var(--border-2); }
+  .dash-card h4 { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .6px; text-transform: uppercase; margin-bottom: 12px; }
+  .big-num { font-family: "Sora", sans-serif; font-size: 34px; font-weight: 800; }
+  .bar-row { display: grid; grid-template-columns: 130px 1fr 38px; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 12px; }
+  .bar-row .t { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-row .track { height: 8px; background: rgba(255,255,255,.06); border-radius: 99px; overflow: hidden; }
+  .bar-row .fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--cyan)); transition: width .7s ease; }
+  .bar-row .v { font-family: var(--mono); color: var(--muted); text-align: right; }
+
+  .session-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; cursor: pointer; transition: all .18s ease; }
+  .session-card:hover { transform: translateY(-3px); border-color: rgba(109,141,255,.4); box-shadow: 0 12px 34px rgba(0,0,0,.35); }
+  .session-card .s-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .session-card .s-name { font-weight: 700; font-size: 15px; }
+  .session-card .s-score { font-family: "Sora", sans-serif; font-weight: 800; font-size: 18px; }
+  .session-card .s-meta { font-size: 11.5px; color: var(--muted); margin-bottom: 10px; }
+  .session-card .s-gaps { display: flex; flex-wrap: wrap; gap: 5px; }
+  .session-card .tag { font-size: 10px; padding: 3px 8px; border-radius: 99px; background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.3); color: #fca5a5; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-state .big { font-size: 44px; margin-bottom: 12px; }
+
+  /* ----- interview view ----- */
+  .chat-head { padding: 14px 26px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(13,17,28,.55); backdrop-filter: blur(12px); }
+  .who { font-size: 14px; min-width: 0; }
+  .who b { color: var(--accent); }
+  .who span { color: var(--muted); font-size: 12px; margin-left: 8px; }
+  .head-right { display: flex; align-items: center; gap: 12px; }
+  #candidate-pick-mobile { display: none; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center;
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all .15s ease;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--border-2); }
+  .icon-btn.on { color: var(--cyan); border-color: rgba(56,224,224,.4); background: rgba(56,224,224,.1); }
+  .live-dot { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--good); white-space: nowrap; }
+  .live-dot::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 10px var(--good); animation: pulse 2s infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  .messages { flex: 1; overflow-y: auto; padding: 26px 28px; display: flex; flex-direction: column; gap: 18px; }
+  .msg { display: flex; gap: 12px; max-width: 78%; animation: rise .3s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+  .msg.me { align-self: flex-end; flex-direction: row-reverse; }
+  .avatar { width: 34px; height: 34px; border-radius: 11px; flex: none; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+  .msg.me .avatar { background: #232c46; }
+  .bubble-wrap { display: flex; flex-direction: column; gap: 5px; }
+  .meta { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .msg.me .meta { justify-content: flex-end; }
+  .topic-tag { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 600; background: rgba(176,123,255,.16); color: #d5c2ff; border: 1px solid rgba(176,123,255,.35); display: inline-block; }
+  .bubble { padding: 12px 16px; border-radius: var(--radius); background: var(--panel-2); border: 1px solid var(--border); font-size: 14px; line-height: 1.68; white-space: pre-wrap; word-break: break-word; }
+  .msg.me .bubble { background: linear-gradient(135deg, rgba(109,141,255,.18), rgba(176,123,255,.14)); border-color: rgba(109,141,255,.4); }
+  .bubble.welcome { background: linear-gradient(135deg, rgba(52,211,153,.08), rgba(109,141,255,.1)); }
+
+  .typing { display: inline-flex; gap: 5px; padding: 4px 2px; }
+  .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: .2s; }
+  .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 50% { opacity: .2; } }
+
+  .composer { padding: 16px 26px 20px; border-top: 1px solid var(--border); }
+  .composer-inner { max-width: 980px; margin: 0 auto; }
+  .voice-status { min-height: 20px; font-size: 12px; color: var(--cyan); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .voice-status .wave { display: inline-flex; gap: 2px; align-items: flex-end; height: 14px; }
+  .voice-status .wave i { width: 3px; border-radius: 2px; background: var(--cyan); animation: wave .9s ease-in-out infinite; }
+  .voice-status .wave i:nth-child(2) { animation-delay: .15s; }
+  .voice-status .wave i:nth-child(3) { animation-delay: .3s; }
+  .voice-status .wave i:nth-child(4) { animation-delay: .45s; }
+  .voice-status .wave i:nth-child(5) { animation-delay: .6s; }
+  @keyframes wave { 0%,100% { height: 4px; } 50% { height: 14px; } }
+  .composer form { display: flex; gap: 10px; }
+  .composer textarea {
+    flex: 1; resize: none; padding: 13px 16px; border-radius: 14px;
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    font: inherit; font-size: 14px; outline: none; min-height: 50px; max-height: 150px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .composer textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(109,141,255,.15); }
+  .composer textarea:disabled { opacity: .5; }
+  .mic-btn {
+    width: 52px; height: 52px; border-radius: 14px; border: 1px solid var(--border); flex: none;
+    background: var(--panel-2); color: var(--muted); cursor: pointer; display: grid; place-items: center; transition: all .18s ease;
+  }
+  .mic-btn:hover { color: var(--text); border-color: var(--border-2); }
+  .mic-btn.listening { background: linear-gradient(135deg, rgba(248,113,113,.25), rgba(176,123,255,.2)); border-color: rgba(248,113,113,.5); color: #fca5a5; animation: micPulse 1.4s infinite; }
+  @keyframes micPulse { 50% { box-shadow: 0 0 0 9px rgba(248,113,113,.12); } }
+  .mic-btn.disabled { opacity: .35; cursor: not-allowed; }
+  .send-btn {
+    padding: 0 24px; border: none; border-radius: 14px; font: inherit; font-weight: 600; font-size: 14px;
+    color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease; box-shadow: 0 8px 22px rgba(109,141,255,.35);
+  }
+  .send-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(109,141,255,.45); }
+  .send-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* ----- feedback ----- */
+  .feedback { max-width: 900px; margin: 0 auto 30px; }
+  .feedback-card { background: rgba(20,25,38,.85); border: 1px solid var(--border-2); border-radius: 22px; padding: 28px 30px; box-shadow: 0 30px 80px rgba(0,0,0,.5); backdrop-filter: blur(16px); }
+  .fb-head { display: flex; align-items: center; gap: 24px; margin-bottom: 22px; flex-wrap: wrap; }
+  .ring-wrap { position: relative; width: 130px; height: 130px; flex: none; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: rgba(255,255,255,.08); stroke-width: 10; }
+  .ring-fg { fill: none; stroke: url(#ringGrad); stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+  .ring-val { position: absolute; inset: 0; display: grid; place-items: center; font-family: "Sora", sans-serif; font-size: 30px; font-weight: 800; }
+  .fb-head h2 { font-family: "Sora", sans-serif; font-size: 22px; }
+  .fb-head .sub { color: var(--muted); font-size: 13px; margin-top: 6px; max-width: 480px; }
+  .summary { font-size: 14px; line-height: 1.75; background: rgba(7,10,19,.6); border: 1px solid var(--border); border-radius: 13px; padding: 16px 18px; margin-bottom: 20px; }
+  .fb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+  .fb-col h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
+  .fb-col ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .fb-col li { font-size: 13px; line-height: 1.6; padding: 10px 12px; border-radius: 10px; background: rgba(7,10,19,.6); border: 1px solid var(--border); }
+  .fb-col.strengths h3 { color: var(--good); }
+  .fb-col.gaps h3 { color: var(--warn); }
+  .fb-col.next h3 { color: var(--accent); }
+  .restart { margin-top: 20px; padding: 12px 24px; border-radius: 12px; border: 1px solid var(--border-2); background: var(--panel-2); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; transition: all .15s ease; }
+  .restart:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ----- radar (in feedback) ----- */
+  .radar-wrap { margin-top: 20px; display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .radar-wrap .r-labels { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; color: var(--muted); }
+  .radar-wrap .r-labels b { color: var(--text); }
+
+  /* ----- modal ----- */
+  .modal-back {
+    position: fixed; inset: 0; background: rgba(4,6,12,.7); backdrop-filter: blur(8px);
+    display: grid; place-items: center; z-index: 50; padding: 20px; animation: fade .2s ease;
+  }
+  @keyframes fade { from { opacity: 0; } }
+  .modal-card { max-width: 780px; width: 100%; max-height: 86vh; overflow-y: auto; background: rgba(18,23,36,.95); border: 1px solid var(--border-2); border-radius: 20px; padding: 26px; position: relative; }
+  .modal-close { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel-2); color: var(--muted); cursor: pointer; font-size: 15px; }
+  .modal-close:hover { color: var(--text); }
+
+  .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); background: rgba(20,25,38,.95); border: 1px solid var(--border-2); color: var(--text); padding: 12px 18px; border-radius: 12px; font-size: 13px; z-index: 120; box-shadow: 0 16px 44px rgba(0,0,0,.5); animation: toastIn .25s ease; }
+  @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 12px); } }
+
+  .hint { text-align: center; color: var(--muted); font-size: 12px; padding: 26px 20px 8px; }
+
+  /* ----- responsive ----- */
+  @media (max-width: 960px) {
+    .sidebar { display: none; }
+    .mob-nav { display: flex; }
+    #candidate-pick-mobile { display: flex; width: 210px; }
+    .messages { padding: 18px; }
+    .msg { max-width: 92%; }
+    .view { padding: 20px 18px; }
+  }
+  @media (max-width: 560px) {
+    #candidate-pick-mobile { width: 170px; }
+    .live-dot { display: none; }
+    .head-right { gap: 8px; }
+  }
+
+  /* ---- eye-catching candidate picker ---- */
+  .pick-trigger { width: 100%; display: flex; align-items: center; gap: 11px; padding: 11px 13px; border-radius: 14px; background: linear-gradient(135deg, rgba(109,141,255,.12), rgba(176,123,255,.07)); border: 1px solid rgba(109,141,255,.35); cursor: pointer; transition: all .18s ease; text-align: left; font: inherit; color: var(--text); }
+  .pick-trigger:hover { border-color: rgba(109,141,255,.65); box-shadow: 0 10px 28px rgba(109,141,255,.22); transform: translateY(-1px); }
+  .pick-trigger.chosen { animation: pickGlow 2.6s ease-in-out infinite; }
+  @keyframes pickGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(109,141,255,.28); } 50% { box-shadow: 0 0 0 7px rgba(109,141,255,.06); } }
+  .pick-trigger .pick-av { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: 13px; color: #fff; flex: none; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+  .pick-trigger.placeholder .pick-av { background: rgba(255,255,255,.06); color: var(--accent); border: 1px dashed rgba(109,141,255,.55); font-size: 15px; }
+  .pick-trigger .pick-info { flex: 1; min-width: 0; }
+  .pick-trigger .pick-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pick-trigger .pick-sub { font-size: 10.5px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pick-trigger .chev { color: var(--muted); transition: transform .2s ease; flex: none; }
+  .pick-trigger.open .chev { transform: rotate(180deg); }
+  .pick-trigger-mobile { padding: 7px 10px; border-radius: 13px; }
+  .pick-trigger-mobile .pick-av { width: 30px; height: 30px; border-radius: 10px; font-size: 11px; }
+  .pick-trigger-mobile .pick-name { font-size: 12px; }
+
+  .picker-overlay { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; background: rgba(4,6,12,.66); backdrop-filter: blur(10px); padding: 18px; animation: fade .18s ease; }
+  .picker-panel { width: min(720px, 100%); max-height: 80vh; display: flex; flex-direction: column; background: rgba(20,25,38,.97); border: 1px solid var(--border-2); border-radius: 22px; overflow: hidden; box-shadow: 0 40px 110px rgba(0,0,0,.65); animation: rise .25s ease; }
+  .picker-head { position: relative; padding: 18px 20px 14px; border-bottom: 1px solid var(--border); }
+  .picker-head h3 { font-family: "Sora", sans-serif; font-size: 17px; }
+  .picker-head .modal-close { top: 14px; }
+  .picker-search { width: 100%; margin-top: 12px; padding: 11px 14px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--border); color: var(--text); font: inherit; font-size: 13px; outline: none; transition: border-color .15s ease, box-shadow .15s ease; }
+  .picker-search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(109,141,255,.16); }
+  .picker-list { overflow-y: auto; padding: 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+  .cand-card { display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 15px; background: var(--panel); border: 1px solid var(--border); cursor: pointer; transition: all .16s ease; }
+  .cand-card:hover { transform: translateY(-2px); border-color: rgba(109,141,255,.55); background: rgba(109,141,255,.08); }
+  .cand-card.selected { border-color: rgba(56,224,224,.6); box-shadow: 0 0 0 1px rgba(56,224,224,.35), 0 10px 30px rgba(56,224,224,.12); }
+  .cand-av { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-weight: 800; font-size: 15px; color: #fff; flex: none; box-shadow: 0 6px 16px rgba(0,0,0,.35); }
+  .cand-info { flex: 1; min-width: 0; }
+  .cand-name { font-weight: 600; font-size: 13.5px; display: flex; align-items: center; gap: 7px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 8px var(--good); flex: none; }
+  .cand-check { margin-left: auto; color: var(--cyan); opacity: 0; transition: opacity .15s ease; font-weight: 800; }
+  .cand-card.selected .cand-check { opacity: 1; }
+  .cand-role { font-size: 11.5px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cand-chips { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+  .cand-chip { font-size: 9.5px; padding: 2px 8px; border-radius: 99px; background: rgba(255,255,255,.06); border: 1px solid var(--border); color: var(--muted); }
+  .cand-chip.good { color: var(--good); border-color: rgba(52,211,153,.32); background: rgba(52,211,153,.08); }
+
+  /* ============ eye-catch upgrades ============ */
+  .hero { position: relative; }
+  #particles { position: absolute; top: -30px; left: 0; width: 100%; height: 360px; z-index: 0; pointer-events: none; }
+  .hero .hero-inner { position: relative; z-index: 1; }
+  .hero h2 .grad-text { background-size: 220% auto; animation: shimmer 5.5s linear infinite; }
+  @keyframes shimmer { to { background-position: 220% center; } }
+  .kicker { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 99px; border: 1px solid rgba(56,224,224,.35); background: rgba(56,224,224,.08); color: var(--cyan); width: fit-content; }
+  .kicker::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 12px var(--cyan); animation: pulse 1.6s infinite; }
+
+  .dash-card { transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+  .dash-card:hover { transform: translateY(-4px); border-color: rgba(109,141,255,.5); box-shadow: 0 18px 50px rgba(109,141,255,.16); }
+  .dash-card.glare { position: relative; overflow: hidden; }
+  .dash-card.glare::after { content: ""; position: absolute; top: 0; left: -80%; width: 45%; height: 100%; background: linear-gradient(105deg, transparent, rgba(255,255,255,.09), transparent); transform: skewX(-18deg); animation: glare 6s ease-in-out infinite; pointer-events: none; }
+  @keyframes glare { 0%, 55% { left: -80%; } 100% { left: 150%; } }
+
+  .dash-grid .dash-card, .session-card { animation: rise .5s ease backwards; }
+  .dash-grid .dash-card:nth-child(1) { animation-delay: .04s; }
+  .dash-grid .dash-card:nth-child(2) { animation-delay: .1s; }
+  .dash-grid .dash-card:nth-child(3) { animation-delay: .16s; }
+  .dash-grid .dash-card:nth-child(4) { animation-delay: .22s; }
+
+  .gauge-wrap { display: flex; align-items: center; gap: 16px; }
+  .gauge { position: relative; width: 122px; height: 122px; flex: none; }
+  .gauge svg { transform: rotate(-90deg); }
+  .gauge .g-val { position: absolute; inset: 0; display: grid; place-items: center; font-family: "Sora", sans-serif; font-size: 27px; font-weight: 800; }
+
+  .bar-row .fill, .mastery .fill { background: linear-gradient(90deg, var(--accent) 0%, var(--cyan) 45%, var(--accent-2) 80%, var(--accent) 100%); background-size: 220% 100%; animation: barflow 3.2s linear infinite; }
+  @keyframes barflow { to { background-position: -220% 0; } }
+
+  .prog-line { stroke-dasharray: 520; stroke-dashoffset: 520; animation: drawline 1.4s ease forwards; }
+  @keyframes drawline { to { stroke-dashoffset: 0; } }
+  .prog-dot-live { animation: dotpulse 1.8s ease-in-out infinite; }
+  @keyframes dotpulse { 0%, 100% { r: 3.5; } 50% { r: 6; } }
+  .prog-glow { filter: drop-shadow(0 0 6px rgba(109,141,255,.8)); }
+
+  .session-card { overflow: hidden; }
+  .session-card .s-mini { height: 5px; border-radius: 99px; background: rgba(255,255,255,.07); margin-top: 12px; overflow: hidden; }
+  .session-card .s-mini > div { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--cyan)); }
+  .session-card .s-gaps { margin-top: 10px; }
+
+  .radar-card { display: flex; justify-content: center; align-items: center; min-height: 214px; }
+  .radar-card .radar-labels { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px; font-size: 11px; color: var(--muted); }
+  .radar-card .radar-labels b { color: var(--text); font-weight: 600; }
+
+  .empty-state .orb { width: 92px; height: 92px; margin: 0 auto 14px; border-radius: 50%; display: grid; place-items: center; font-size: 40px; background: radial-gradient(circle at 30% 30%, rgba(109,141,255,.4), rgba(176,123,255,.16) 60%, transparent); border: 1px solid rgba(109,141,255,.45); animation: orbpulse 2.6s ease-in-out infinite; }
+  @keyframes orbpulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(109,141,255,.22), inset 0 0 22px rgba(56,224,224,.12); } 50% { transform: scale(1.07); box-shadow: 0 0 64px rgba(109,141,255,.5), inset 0 0 30px rgba(56,224,224,.22); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    #particles, #particles-auth, .hero h2 .grad-text, .dash-card.glare::after, .bar-row .fill, .mastery .fill,
+    .prog-line, .prog-dot-live, .empty-state .orb, .kicker::before, .welcome-emoji { animation: none !important; }
+  }
+
+  /* ============ auth stage (login + welcome) ============ */
+  .auth-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; overflow: hidden; padding: 20px; background: radial-gradient(1000px 620px at 18% 8%, rgba(109,141,255,.12), transparent 60%), radial-gradient(900px 620px at 92% 92%, rgba(176,123,255,.12), transparent 60%), rgba(7,10,19,.94); backdrop-filter: blur(10px); }
+  #particles-auth { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .auth-card { width: min(420px, 100%); text-align: center; animation: rise .5s ease; position: relative; }
+  .auth-logo { width: 64px; height: 64px; margin: 0 auto 18px; border-radius: 20px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; font-family: "Sora", sans-serif; font-weight: 800; font-size: 24px; box-shadow: 0 14px 44px rgba(109,141,255,.45); }
+  .auth-title { font-family: "Sora", sans-serif; font-size: 26px; font-weight: 800; }
+  .auth-sub { color: var(--muted); font-size: 13.5px; margin-top: 10px; line-height: 1.65; }
+  .auth-form { margin-top: 26px; display: flex; flex-direction: column; gap: 14px; text-align: left; }
+  .field span { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+  .field em { text-transform: none; letter-spacing: 0; font-weight: 400; opacity: .7; }
+  .field input { width: 100%; padding: 13px 15px; border-radius: 13px; background: var(--panel-2); border: 1px solid var(--border); color: var(--text); font: inherit; font-size: 14px; outline: none; transition: border-color .15s ease, box-shadow .15s ease; }
+  .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(109,141,255,.16); }
+  .auth-btn { width: 100%; justify-content: center; margin-top: 6px; }
+  .auth-note { font-size: 11px; color: var(--muted); margin-top: 18px; line-height: 1.6; }
+
+  .welcome-card { width: min(540px, 100%); }
+  .welcome-emoji { font-size: 60px; display: inline-block; animation: waveHand 2.4s ease-in-out infinite; }
+  @keyframes waveHand { 0%, 100% { transform: rotate(0); } 10% { transform: rotate(20deg); } 20% { transform: rotate(-10deg); } 30% { transform: rotate(16deg); } 40% { transform: rotate(-6deg); } 50% { transform: rotate(0); } }
+  .welcome-hello { font-family: "Sora", sans-serif; font-size: clamp(26px, 5vw, 36px); font-weight: 800; margin-top: 12px; }
+  .welcome-stats { display: flex; gap: 10px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+  .w-stat { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 12px 18px; font-size: 11.5px; color: var(--muted); min-width: 110px; }
+  .w-stat b { display: block; font-family: "Sora", sans-serif; font-size: 21px; color: var(--text); margin-bottom: 2px; }
+  .auth-cta { margin-top: 28px; justify-content: center; }
+  .switch-account { margin-top: 20px; background: none; border: none; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; }
+  .switch-account:hover { color: var(--text); }
+  .foot-signout { margin-top: 12px; background: none; border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 9px; font: inherit; font-size: 11px; cursor: pointer; transition: all .15s ease; }
+  .foot-signout:hover { color: var(--text); border-color: var(--border-2); }
+</style>
+</head>
+<body>
+
+<div class="bg-mesh"><div class="blob"></div></div>
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="logo">AI</div>
+    <div>
+      <h1>Interview <span class="grad-text">Prep Suite</span></h1>
+      <p>31-DAY AI COHORT · MOCK INTERVIEWS</p>
+    </div>
+  </div>
+
+  <nav class="tabs">
+    <span class="nav-slider"></span>
+    <button class="tab active" id="tab-dash">✦<span> Dashboard</span><b class="tab-badge" id="badge-dash">0</b></button>
+    <button class="tab" id="tab-iv">🎙<span> Interview</span></button>
+  </nav>
+
+  <!-- interview panel -->
+  <div id="side-interview" class="side-panel">
+    <div>
+      <div class="side-label">Candidate profile</div>
+      <button id="candidate-pick" class="pick-trigger placeholder" type="button"></button>
+    </div>
+    <div>
+      <div class="side-label">Live session</div>
+      <div id="live-stats" class="stat-grid"></div>
+    </div>
+    <div class="progress-box">
+      <div class="progress-top"><span>Interview progress</span><b id="qCount">— / —</b></div>
+      <div class="bar"><div id="qBar"></div></div>
+    </div>
+    <div>
+      <div class="side-label">Topic mastery</div>
+      <div id="mastery" class="mastery"></div>
+    </div>
+    <div>
+      <div class="side-label">Covered</div>
+      <div id="chips" class="chips"></div>
+    </div>
+  </div>
+
+  <!-- dashboard panel -->
+  <div id="side-dash" class="side-panel hidden">
+    <div>
+      <div class="side-label">Overall</div>
+      <div id="overall-stats" class="stat-grid"></div>
+    </div>
+    <div>
+      <div class="side-label">Strongest topics</div>
+      <div id="dash-topics" class="mastery"></div>
+    </div>
+    <div>
+      <div class="side-label">Recent interviews</div>
+      <div id="recent-list" class="recent"></div>
+    </div>
+  </div>
+
+  <div class="side-foot">
+    <b>Voice enabled</b> · speak answers, hear questions<br />
+    10+ questions · 4+ days · adaptive follow-ups<br />
+    feedback as structured JSON in the API
+    <button class="foot-signout" id="btn-signout">Sign out</button>
+  </div>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<main class="main">
+  <div class="mob-nav">
+    <span class="nav-slider"></span>
+    <button class="tab active" id="mob-dash">✦ Dashboard</button>
+    <button class="tab" id="mob-iv">🎙 Interview</button>
+  </div>
+
+  <!-- ----- dashboard view ----- -->
+  <section id="view-dash" class="view">
+    <div class="hero">
+      <canvas id="particles"></canvas>
+      <div class="hero-inner">
+        <div class="kicker">AI Interview Agent · Personal Prep</div>
+        <h2>Turn your cohort journey into<br /><span class="grad-text">interview confidence.</span></h2>
+        <p>Every interview is personalized from your missions, attempts, and learning
+           signals — then analyzed into a live dashboard of strengths, gaps, and the
+           exact topics to revisit before the real thing.</p>
+        <div class="cta-row">
+          <button class="btn btn-primary" id="cta-start">🎙 Start an interview</button>
+          <button class="btn btn-ghost" id="cta-clear">Clear history</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-grid" id="overall-cards"></div>
+
+    <div class="dash-grid">
+      <div class="dash-card">
+        <h4>Topic strength (all sessions)</h4>
+        <div id="dash-bars"></div>
+      </div>
+      <div class="dash-card">
+        <h4>Mastery radar</h4>
+        <div class="radar-card" id="dash-radar"></div>
+      </div>
+      <div class="dash-card">
+        <h4>Score progression</h4>
+        <div id="dash-progress"></div>
+      </div>
+    </div>
+
+    <div style="max-width:1000px; margin-top:26px;">
+      <div class="side-label">Session history</div>
+      <div id="dash-sessions" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px;"></div>
+    </div>
+  </section>
+
+  <!-- ----- interview view ----- -->
+  <section id="view-iv" class="view hidden" style="display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div class="chat-head">
+      <div class="who"><b id="who">Select a candidate</b><span id="role"></span></div>
+      <div class="head-right">
+        <button id="candidate-pick-mobile" class="pick-trigger pick-trigger-mobile" type="button"></button>
+        <button class="icon-btn on" id="voice-btn" title="Interviewer voice: on">🔊</button>
+        <div class="live-dot" id="live">interviewer online</div>
+      </div>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="composer">
+      <div class="composer-inner">
+        <div class="voice-status" id="voice-status"></div>
+        <form id="form">
+          <textarea id="input" rows="1" placeholder="Type your answer… or press the mic and speak (Enter to send, Shift+Enter for newline)" disabled></textarea>
+          <button type="button" class="mic-btn" id="mic" title="Speak your answer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>
+            </svg>
+          </button>
+          <button class="send-btn" id="send" type="submit" disabled>Send</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="modal" class="modal-back hidden"></div>
+<div id="toast-holder"></div>
+
+<!-- candidate picker overlay -->
+<div id="picker-overlay" class="picker-overlay hidden">
+  <div class="picker-panel">
+    <div class="picker-head">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <h3>Choose a <span class="grad-text">candidate</span></h3>
+        <button class="modal-close" onclick="closePicker()">✕</button>
+      </div>
+      <input id="picker-search" class="picker-search" type="text" placeholder="Search by name, role, or ID…" />
+    </div>
+    <div id="cand-list" class="picker-list"></div>
+  </div>
+</div>
+
+<!-- ============ auth stage ============ -->
+<div id="view-login" class="auth-overlay">
+  <canvas id="particles-auth" class="constellation"></canvas>
+  <div class="auth-card">
+    <div class="auth-logo">AI</div>
+    <h1 class="auth-title">Interview <span class="grad-text">Prep Suite</span></h1>
+    <p class="auth-sub">Personalized mock interviews for the 31-day AI Cohort — every question built from your journey.</p>
+    <form id="login-form" class="auth-form" autocomplete="off">
+      <input id="login-hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;height:0;opacity:0;border:0" />
+      <label class="field">
+        <span>Your name</span>
+        <input id="login-name" type="text" name="fullname" autocomplete="off" placeholder="e.g. Sarah Johnson" maxlength="60" required />
+      </label>
+      <label class="field">
+        <span>Email <em>(optional)</em></span>
+        <input id="login-email" type="email" name="email" autocomplete="off" placeholder="you@example.com" />
+      </label>
+      <button class="btn btn-primary auth-btn" type="submit">Continue →</button>
+    </form>
+    <p class="auth-note">No password needed — this is a local demo. Your progress is saved on this device.</p>
+  </div>
+</div>
+
+<div id="view-welcome" class="auth-overlay hidden">
+  <div class="auth-card welcome-card">
+    <div class="welcome-emoji">👋</div>
+    <h1 class="welcome-hello">Welcome, <span class="grad-text" id="welcome-name"></span>!</h1>
+    <p class="auth-sub" id="welcome-sub"></p>
+    <div class="welcome-stats" id="welcome-stats"></div>
+    <div class="cta-row auth-cta">
+      <button class="btn btn-primary" id="btn-start-iv">🎙 Start your interview</button>
+      <button class="btn btn-ghost" id="btn-explore">Open dashboard</button>
+    </div>
+    <button class="switch-account" id="btn-switch">Not <span id="switch-name">you</span>? Switch account</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const $ = (id) => document.getElementById(id);
+const messagesEl = $("messages");
+const form = $("form");
+const input = $("input");
+const sendBtn = $("send");
+const HISTORY_KEY = "aiInterviewHistory";
+
+/* ================= state ================= */
+let sessionId = null;
+let candidate = null;
+let awaiting = false;
+let chipCache = [];
+let voiceOn = true;
+let gen = 0; // generation counter: stale async responses are ignored
+let history = [];
+try { history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch (e) { history = []; }
+
+/* ================= helpers ================= */
+function esc(s) {
+  return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function toast(msg) {
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = msg;
+  $("toast-holder").appendChild(el);
+  setTimeout(() => el.remove(), 3400);
+}
+function animateValue(el, from, to, ms = 900, suffix = "") {
+  const start = performance.now();
+  const step = (now) => {
+    const p = Math.min((now - start) / ms, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(from + (to - from) * eased) + suffix;
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+function fmtDate(ts) {
+  return new Date(ts).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+/* ================= views / nav ================= */
+function positionNavSliders(v) {
+  const idx = v === "dash" ? 0 : 1;
+  document.querySelectorAll(".nav-slider").forEach((slider) => {
+    slider.style.transform = `translateX(calc(${idx * 100}% + ${idx * 5}px))`;
+  });
+}
+function showView(v) {
+  const isDash = v === "dash";
+  $("view-dash").classList.toggle("hidden", !isDash);
+  $("view-iv").classList.toggle("hidden", isDash);
+  $("tab-dash").classList.toggle("active", isDash);
+  $("tab-iv").classList.toggle("active", !isDash);
+  $("mob-dash").classList.toggle("active", isDash);
+  $("mob-iv").classList.toggle("active", !isDash);
+  $("side-interview").classList.toggle("hidden", isDash);
+  $("side-dash").classList.toggle("hidden", !isDash);
+  positionNavSliders(v);
+  if (isDash) renderDashboard();
+  else setTimeout(() => input.focus(), 60);
+}
+["tab-dash", "mob-dash"].forEach(id => $(id).addEventListener("click", () => showView("dash")));
+["tab-iv", "mob-iv"].forEach(id => $(id).addEventListener("click", () => showView("iv")));
+$("cta-start").addEventListener("click", () => showView("iv"));
+$("cta-clear").addEventListener("click", () => {
+  if (confirm("Clear all saved interview history?")) { history = []; localStorage.removeItem(HISTORY_KEY); renderDashboard(); }
+});
+
+/* ================= voice output ================= */
+function pickVoice(u) {
+  const vs = speechSynthesis.getVoices();
+  const pref = vs.find(v => /en[-_]US/i.test(v.lang) && /google|natural|aria/i.test(v.name))
+            || vs.find(v => /^en/i.test(v.lang)) || vs[0];
+  if (pref) u.voice = pref;
+}
+if ("speechSynthesis" in window) {
+  speechSynthesis.onvoiceschanged = () => pickVoice({});
+  $("voice-btn").addEventListener("click", () => {
+    voiceOn = !voiceOn;
+    $("voice-btn").classList.toggle("on", voiceOn);
+    $("voice-btn").title = voiceOn ? "Interviewer voice: on" : "Interviewer voice: off";
+    $("voice-btn").textContent = voiceOn ? "🔊" : "🔇";
+    if (voiceOn) toast("Interviewer voice enabled — questions will be read aloud.");
+    else speechSynthesis.cancel();
+  });
+}
+function speak(text) {
+  if (!voiceOn || !("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1.03; u.pitch = 1;
+  pickVoice(u);
+  speechSynthesis.speak(u);
+}
+
+/* ================= voice input ================= */
+const voiceStatusEl = $("voice-status");
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, listening = false;
+const micBtn = $("mic");
+
+function setListening(on) {
+  listening = on;
+  micBtn.classList.toggle("listening", on);
+  voiceStatusEl.innerHTML = on
+    ? `<span class="wave"><i></i><i></i><i></i><i></i><i></i></span> Listening — speak your answer…`
+    : "";
+  if (!on) input.placeholder = "Type your answer… or press the mic and speak";
+}
+if (SR) {
+  rec = new SR();
+  rec.lang = "en-US";
+  rec.interimResults = true;
+  rec.continuous = false;
+  rec.maxAlternatives = 1;
+  rec.onresult = (e) => {
+    let final = "", interim = "";
+    for (const r of e.results) {
+      if (r.isFinal) final += r[0].transcript;
+      else interim += r[0].transcript;
+    }
+    if (final) {
+      const base = input.value.trim();
+      input.value = base ? base + " " + final : final;
+      input.dispatchEvent(new Event("input"));
+      voiceStatusEl.innerHTML = `<span class="wave"><i></i><i></i><i></i><i></i><i></i></span> Heard: “${esc(final)}”`;
+      setTimeout(() => { if (!listening) voiceStatusEl.innerHTML = ""; }, 2600);
+    }
+    if (interim) voiceStatusEl.innerHTML = `<span class="wave"><i></i><i></i><i></i><i></i><i></i></span> ${esc(interim)}`;
+  };
+  rec.onend = () => setListening(false);
+  rec.onerror = (e) => {
+    setListening(false);
+    if (e.error === "not-allowed") toast("Microphone access denied — allow it in your browser to use voice.");
+    else if (e.error === "network") toast("Speech recognition needs internet — type your answer instead.");
+    else if (e.error !== "aborted") toast("Voice input stopped. Try again.");
+  };
+  micBtn.addEventListener("click", () => {
+    if (listening) { rec.stop(); setListening(false); return; }
+    if (awaiting) return;
+    input.placeholder = "Listening…";
+    input.focus();
+    try { rec.start(); setListening(true); } catch (e) { /* already started */ }
+  });
+} else {
+  micBtn.classList.add("disabled");
+  micBtn.title = "Voice input requires Chrome";
+  micBtn.addEventListener("click", () => toast("Voice input requires Chrome with the Web Speech API."));
+}
+
+/* ================= candidates ================= */
+/* ================= candidate picker ================= */
+let roster = [];
+let pickedCandidate = null;
+
+function pickerColor(id) {
+  let h = 0;
+  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) % 360;
+  return `linear-gradient(135deg, hsl(${h},68%,52%), hsl(${(h + 45) % 360},68%,44%))`;
+}
+function initials(name) {
+  return String(name || "").split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase() || "?";
+}
+
+async function loadRoster() {
+  try {
+    const res = await fetch("/api/candidates-full");
+    roster = await res.json();
+  } catch (e) { roster = []; }
+  renderPickerTriggers();
+  // if the picker is already open (auto-opened from the welcome CTA), fill it now
+  if (!$("picker-overlay").classList.contains("hidden")) renderCandidateList($("picker-search").value);
+}
+
+function renderPickerTriggers() {
+  const c = pickedCandidate;
+  $("candidate-pick").classList.toggle("chosen", !!c);
+  $("candidate-pick").classList.toggle("placeholder", !c);
+  $("candidate-pick").innerHTML = c
+    ? `<div class="pick-av" style="background:${pickerColor(c.full.member.id)}">${initials(c.full.member.name)}</div>
+       <div class="pick-info"><div class="pick-name">${esc(c.full.member.name)}</div><div class="pick-sub">${esc(c.full.member.jobRole)} · ${c.full.member.yearsExperience} yrs</div></div>
+       <span class="chev">▾</span>`
+    : `<div class="pick-av">✦</div>
+       <div class="pick-info"><div class="pick-name">Choose a candidate</div><div class="pick-sub">pick a cohort profile to interview</div></div>
+       <span class="chev">▾</span>`;
+  $("candidate-pick-mobile").classList.toggle("chosen", !!c);
+  $("candidate-pick-mobile").innerHTML = c
+    ? `<div class="pick-av" style="background:${pickerColor(c.full.member.id)}">${initials(c.full.member.name)}</div>
+       <div class="pick-info"><div class="pick-name">${esc(c.full.member.name)}</div></div>`
+    : `<div class="pick-av">✦</div><div class="pick-info"><div class="pick-name">Choose</div></div>`;
+}
+
+function renderCandidateList(q) {
+  const term = (q || "").trim().toLowerCase();
+  const list = roster.filter(c => {
+    if (!term) return true;
+    const m = c.member;
+    return (m.name + " " + m.jobRole + " " + m.id).toLowerCase().includes(term);
+  });
+  const selId = pickedCandidate ? pickedCandidate.full.member.id : null;
+  $("cand-list").innerHTML = list.map(c => {
+    const m = c.member, sig = c.signals || {};
+    const firstTry = sig.missionsCompleted ? Math.round(((sig.missionsFirstTry || 0) / sig.missionsCompleted) * 100) : null;
+    return `<div class="cand-card${m.id === selId ? " selected" : ""}" onclick="pickCandidate('${m.id}')">
+      <div class="cand-av" style="background:${pickerColor(m.id)}">${initials(m.name)}</div>
+      <div class="cand-info">
+        <div class="cand-name">${esc(m.name)}<span class="status-dot" title="${m.status}"></span><span class="cand-check">✓</span></div>
+        <div class="cand-role">${esc(m.jobRole)} · ${m.yearsExperience} yrs · ${esc(m.education || "")}</div>
+        <div class="cand-chips">
+          <span class="cand-chip good">${sig.missionsCompleted ?? "?"} missions</span>
+          ${firstTry != null ? `<span class="cand-chip">${firstTry}% first-try</span>` : ""}
+          ${sig.commitDays ? `<span class="cand-chip">${sig.commitDays}d streak</span>` : ""}
+        </div>
+      </div>
+    </div>`;
+  }).join("") || `<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:28px">No candidates match “${esc(q)}”</div>`;
+}
+
+function openPicker() {
+  renderCandidateList("");
+  $("picker-search").value = "";
+  $("picker-overlay").classList.remove("hidden");
+  $("candidate-pick").classList.add("open");
+  setTimeout(() => $("picker-search").focus(), 60);
+}
+function closePicker() {
+  $("picker-overlay").classList.add("hidden");
+  $("candidate-pick").classList.remove("open");
+}
+function pickCandidate(id) {
+  const c = roster.find(r => r.member.id === id);
+  if (!c) return;
+  pickedCandidate = { meta: c.member, full: c };
+  renderPickerTriggers();
+  closePicker();
+  $("who").textContent = c.member.name;
+  $("role").textContent = `${c.member.jobRole} · ${c.member.yearsExperience} yrs`;
+  messagesEl.innerHTML = "";
+  startInterview(pickedCandidate);
+}
+$("candidate-pick").addEventListener("click", openPicker);
+$("candidate-pick-mobile").addEventListener("click", openPicker);
+$("picker-search").addEventListener("input", (e) => renderCandidateList(e.target.value));
+$("picker-overlay").addEventListener("click", (e) => { if (e.target === $("picker-overlay")) closePicker(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePicker(); });
+
+/* ================= chat plumbing ================= */
+function addMsg(text, opts = {}) {
+  const me = opts.me;
+  const meName = me && currentUser ? firstNameOf(currentUser.name) : "You";
+  const meInitials = me && currentUser ? initials(currentUser.name) : "YOU";
+  const meColor = me && currentUser ? pickerColor(currentUser.name) : "";
+  const wrap = document.createElement("div");
+  wrap.className = "msg" + (me ? " me" : "");
+  wrap.innerHTML = `
+    <div class="avatar"${me ? ` style="background:${meColor}"` : ""}>${me ? esc(meInitials) : "AI"}</div>
+    <div class="bubble-wrap">
+      <div class="meta">
+        ${opts.topic ? `<span class="topic-tag">${esc(opts.topic)}</span>` : ""}
+        <span>${me ? esc(meName) : "interviewer"}</span>
+      </div>
+      <div class="bubble${opts.welcome ? " welcome" : ""}">${esc(text)}</div>
+    </div>`;
+  messagesEl.appendChild(wrap);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return wrap;
+}
+function addTyping() {
+  const wrap = document.createElement("div");
+  wrap.className = "msg";
+  wrap.id = "typing";
+  wrap.innerHTML = `<div class="avatar">AI</div><div class="bubble"><span class="typing"><i></i><i></i><i></i></span></div>`;
+  messagesEl.appendChild(wrap);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+function removeTyping() { const t = $("typing"); if (t) t.remove(); }
+
+async function post(body) {
+  const res = await fetch("/api/interview", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+function updateProgress(resp) {
+  if (resp.totalQuestions) {
+    $("qCount").textContent = `${Math.min(resp.questionNumber ?? 0, resp.totalQuestions)} / ${resp.totalQuestions}`;
+    $("qBar").style.width = `${Math.min(((resp.questionNumber ?? 0) / resp.totalQuestions) * 100, 100)}%`;
+  }
+  if (resp.topic && !chipCache.includes(resp.topic)) {
+    chipCache.push(resp.topic);
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    chip.textContent = resp.topic;
+    $("chips").appendChild(chip);
+  }
+}
+
+async function fetchState() {
+  try {
+    const res = await fetch(`/api/interview/${sessionId}/state`);
+    if (res.ok) return await res.json();
+  } catch (e) { /* ignore */ }
+  return null;
+}
+
+function renderSessionStats(state) {
+  if (!state || !state.topicsAsked) return;
+  const asked = state.topicsAsked;
+  const avg = asked.length ? asked.reduce((a, q) => a + q.score, 0) / asked.length : 0;
+  const followUps = asked.filter(q => q.followUp).length;
+  const unsure = asked.filter(q => q.unsure).length;
+  $("live-stats").innerHTML = `
+    <div class="stat-card glow"><div class="num" id="st-q">${asked.length}</div><div class="lbl">Questions</div></div>
+    <div class="stat-card glow"><div class="num" id="st-d">${state.distinctDaysAsked}</div><div class="lbl">Days covered</div></div>
+    <div class="stat-card"><div class="num" id="st-a">${Math.round(avg * 100)}%</div><div class="lbl">Avg score</div></div>
+    <div class="stat-card"><div class="num" id="st-f">${followUps}${unsure ? `<span style="font-size:12px;color:var(--warn)"> · ${unsure} unsure</span>` : ""}</div><div class="lbl">Follow-ups asked</div></div>`;
+  animateValue($("st-q"), 0, asked.length, 700);
+  animateValue($("st-d"), 0, state.distinctDaysAsked, 700);
+  // topic mastery bars
+  const byTopic = {};
+  asked.forEach(q => {
+    if (!byTopic[q.topic]) byTopic[q.topic] = [];
+    byTopic[q.topic].push(q.score);
+  });
+  const rows = Object.entries(byTopic).map(([t, s]) => [t, s.reduce((a, b) => a + b, 0) / s.length])
+    .sort((a, b) => b[1] - a[1]).slice(0, 6);
+  $("mastery").innerHTML = rows.map(([t, s]) => `
+    <div class="row"><span class="t">${esc(t)}</span>
+      <div class="track"><div class="fill" style="width:${Math.round(s * 100)}%"></div></div>
+      <span class="v">${Math.round(s * 100)}%</span></div>`).join("")
+    || `<div style="font-size:11.5px;color:var(--muted)">Answer a few questions to see mastery.</div>`;
+}
+
+/* ================= flow ================= */
+async function startInterview(cand) {
+  const myGen = ++gen;
+  candidate = cand;
+  sessionId = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+  chipCache = [];
+  $("chips").innerHTML = "";
+  $("mastery").innerHTML = "";
+  $("live-stats").innerHTML = "";
+  $("qCount").textContent = "— / —";
+  $("qBar").style.width = "0%";
+  messagesEl.innerHTML = "";
+  addMsg(`Starting a live interview with <b>${esc(cand.meta.name)}</b> — ${esc(cand.meta.jobRole)}. The interviewer personalizes every question to their cohort journey.`, { me: true });
+  setBusy(true);
+  addTyping();
+  try {
+    const resp = await post({ sessionId, candidate: cand.full });
+    if (myGen !== gen) return; // a newer interview started meanwhile
+    removeTyping();
+    addMsg(resp.reply, { topic: resp.topic, welcome: true });
+    speak(resp.reply);
+    updateProgress(resp);
+  } catch (e) {
+    if (myGen !== gen) return;
+    removeTyping();
+    addMsg(`⚠️ ${esc(e.message)}`, { me: true });
+  } finally {
+    if (myGen === gen) setBusy(false);
+  }
+}
+
+async function sendAnswer() {
+  const myGen = gen;
+  const text = input.value.trim();
+  if (!text || awaiting) return;
+  input.value = "";
+  addMsg(text, { me: true });
+  setBusy(true);
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  addTyping();
+  try {
+    const resp = await post({ sessionId, message: text });
+    if (myGen !== gen) return; // a newer interview started meanwhile
+    removeTyping();
+    if (resp.done) {
+      addMsg(resp.reply, { topic: resp.topic });
+      const state = await fetchState();
+      if (myGen !== gen) return;
+      if (state) renderSessionStats(state);
+      saveHistory(resp.feedback, state);
+      renderFeedback(resp.feedback, state);
+      setBusy(false);
+      input.disabled = true;
+      sendBtn.disabled = true;
+      return;
+    }
+    addMsg(resp.reply, { topic: resp.topic });
+    speak(resp.reply);
+    updateProgress(resp);
+    const state = await fetchState();
+    if (myGen !== gen) return;
+    if (state) renderSessionStats(state);
+  } catch (e) {
+    if (myGen !== gen) return;
+    removeTyping();
+    addMsg(`⚠️ ${esc(e.message)} — please try again.`, { me: true });
+  } finally {
+    if (myGen === gen) setBusy(false);
+  }
+}
+
+function setBusy(busy) {
+  awaiting = busy;
+  input.disabled = busy || !candidate;
+  sendBtn.disabled = busy || !candidate;
+  if (!busy) input.focus();
+}
+
+/* ================= feedback rendering ================= */
+function ringHTML(score) {
+  const r = 52, c = 2 * Math.PI * r, off = c * (1 - score);
+  return `<div class="ring-wrap">
+    <svg width="130" height="130" viewBox="0 0 120 120">
+      <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#6d8dff"/><stop offset="100%" stop-color="#38e0e0"/>
+      </linearGradient></defs>
+      <circle class="ring-bg" cx="60" cy="60" r="${r}"/>
+      <circle class="ring-fg" cx="60" cy="60" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${off}"/>
+    </svg>
+    <div class="ring-val">${Math.round(score * 100)}%</div>
+  </div>`;
+}
+
+function radarHTML(state) {
+  if (!state || !state.topicsAsked) return "";
+  const byTopic = {};
+  state.topicsAsked.forEach(q => {
+    if (!byTopic[q.topic]) byTopic[q.topic] = [];
+    byTopic[q.topic].push(q.score);
+  });
+  const topics = Object.entries(byTopic).map(([t, s]) => [t, s.reduce((a, b) => a + b, 0) / s.length])
+    .sort((a, b) => b[1] - a[1]).slice(0, 6);
+  if (topics.length < 3) return "";
+  const W = 260, C = W / 2, R = 92;
+  const pts = topics.map(([t, s], i) => {
+    const ang = -Math.PI / 2 + (i * 2 * Math.PI) / topics.length;
+    return [C + R * s * Math.cos(ang), C + R * s * Math.sin(ang)];
+  });
+  const poly = pts.map(p => p.map(v => v.toFixed(1)).join(",")).join(" ");
+  const axes = topics.map(([t, s], i) => {
+    const ang = -Math.PI / 2 + (i * 2 * Math.PI) / topics.length;
+    const x = C + R * 1.28 * Math.cos(ang), y = C + R * 1.28 * Math.sin(ang);
+    return `<line x1="${C}" y1="${C}" x2="${C + R * Math.cos(ang)}" y2="${C + R * Math.sin(ang)}" stroke="rgba(255,255,255,.08)"/>
+            <text x="${x}" y="${y}" fill="#93a0b8" font-size="10" text-anchor="middle" dominant-baseline="middle">${esc(t)}</text>`;
+  }).join("");
+  return `<div class="radar-wrap"><svg width="${W}" height="${W}" viewBox="0 0 ${W} ${W}">
+    ${[0.25, 0.5, 0.75, 1].map(g => `<circle cx="${C}" cy="${C}" r="${R * g}" fill="none" stroke="rgba(255,255,255,.07)"/>`).join("")}
+    ${axes}
+    <polygon points="${poly}" fill="rgba(109,141,255,.22)" stroke="url(#radarGrad)" stroke-width="2"/>
+    <defs><linearGradient id="radarGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6d8dff"/><stop offset="100%" stop-color="#38e0e0"/></linearGradient></defs>
+    ${pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="#7dd3fc"/>`).join("")}
+  </svg><div class="r-labels">${topics.map(([t, s]) => `<span><b>${esc(t)}</b> — ${Math.round(s * 100)}%</span>`).join("")}</div></div>`;
+}
+
+function renderFeedback(fb, state) {
+  const scores = (state && state.topicsAsked || []).map(q => q.score);
+  const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0.5;
+  const holder = document.createElement("div");
+  holder.className = "feedback";
+  holder.innerHTML = `
+    <div class="feedback-card">
+      <div class="fb-head">
+        ${ringHTML(avg)}
+        <div>
+          <h2>Interview <span class="grad-text">feedback</span></h2>
+          <div class="sub">Generated from your answers, tied to what interviewers actually ask. Also returned as structured JSON by the API.</div>
+        </div>
+      </div>
+      <div class="summary">${esc(fb.summary)}</div>
+      <div class="fb-grid">
+        <div class="fb-col strengths"><h3>✅ Strengths</h3><ul>${fb.strengths.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>
+        <div class="fb-col gaps"><h3>⚠️ Gaps</h3><ul>${fb.gaps.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>
+        <div class="fb-col next"><h3>🎯 Next steps</h3><ul>${fb.next.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>
+      </div>
+      ${radarHTML(state)}
+      <button class="restart" id="btn-restart">↻ Start a new interview</button>
+    </div>`;
+  holder.querySelector("#btn-restart").addEventListener("click", () => {
+    messagesEl.innerHTML = "";
+    $("qCount").textContent = "— / —"; $("qBar").style.width = "0%";
+    $("chips").innerHTML = ""; $("mastery").innerHTML = ""; $("live-stats").innerHTML = "";
+    input.disabled = true; sendBtn.disabled = true;
+    toast("Pick a candidate (or the same one) to begin a fresh interview.");
+  });
+  messagesEl.appendChild(holder);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+/* ================= history + dashboard ================= */
+function saveHistory(fb, state) {
+  if (!fb || !candidate) return;
+  const scores = (state && state.topicsAsked || []).map(q => q.score);
+  const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0.5;
+  history.unshift({
+    id: candidate.meta.id, name: candidate.meta.name, role: candidate.meta.jobRole,
+    date: Date.now(), summary: fb.summary, strengths: fb.strengths, gaps: fb.gaps, next: fb.next,
+    stats: {
+      questions: (state && state.topicsAsked || []).length,
+      days: state ? state.distinctDaysAsked : 0,
+      avg: avg,
+      followUps: (state ? state.topicsAsked : []).filter(q => q.followUp).length,
+    },
+    topics: (() => {
+      const agg = {};
+      (state && state.topicsAsked || []).forEach(q => {
+        if (!agg[q.topic]) agg[q.topic] = [];
+        agg[q.topic].push(q.score);
+      });
+      return Object.entries(agg).map(([t, s]) => [t, s.reduce((a, b) => a + b, 0) / s.length]);
+    })(),
+  });
+  history = history.slice(0, 12);
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); }
+  catch (e) { toast("History couldn't be saved (storage unavailable) — session stays in memory."); }
+  renderDashboard();
+}
+
+function renderDashboard() {
+  const b = $("badge-dash");
+  if (b) b.textContent = history.length;
+  // sidebar overall
+  const totalQ = history.reduce((a, h) => a + h.stats.questions, 0);
+  const totalD = history.reduce((a, h) => a + h.stats.days, 0);
+  const avgAll = history.length ? history.reduce((a, h) => a + h.stats.avg, 0) / history.length : 0;
+  $("overall-stats").innerHTML = `
+    <div class="stat-card glow"><div class="num">${history.length}</div><div class="lbl">Interviews</div></div>
+    <div class="stat-card glow"><div class="num">${totalQ}</div><div class="lbl">Questions</div></div>
+    <div class="stat-card"><div class="num">${totalD}</div><div class="lbl">Days covered</div></div>
+    <div class="stat-card"><div class="num">${Math.round(avgAll * 100)}%</div><div class="lbl">Avg score</div></div>`;
+  $("recent-list").innerHTML = history.slice(0, 4).map(h => `
+    <button class="recent-item" onclick="openHistoryByDate(${h.date})">
+      <div class="r-top"><span class="r-name">${esc(h.name)}</span><span class="r-score">${Math.round(h.stats.avg * 100)}%</span></div>
+      <div class="r-sub">${esc(h.role)} · ${fmtDate(h.date)} · ${h.stats.questions} q / ${h.stats.days} days</div>
+    </button>`).join("") || `<div style="font-size:11.5px;color:var(--muted)">Complete an interview to see history.</div>`;
+
+  // dashboard hero cards
+  const best = aggregateTopics();
+  $("overall-cards").innerHTML = `
+    <div class="dash-card glare"><h4>Practice sessions</h4><div class="big-num grad-text">${history.length}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">${totalQ} questions · ${totalD} curriculum days answered</div></div>
+    <div class="dash-card"><h4>Average score</h4>
+      <div class="gauge-wrap">${gaugeHTML(avgAll)}<div style="font-size:12px;color:var(--muted);line-height:1.7">across ${history.length || "—"} interview${history.length === 1 ? "" : "s"}<br/><span style="color:${avgAll >= 0.6 ? "var(--good)" : avgAll >= 0.4 ? "var(--warn)" : "var(--bad)"};font-weight:600">${avgAll >= 0.6 ? "● interview-ready" : avgAll >= 0.4 ? "● warming up" : "● just starting"}</span></div></div>
+    </div>
+    <div class="dash-card"><h4>Strongest topic</h4><div class="big-num" style="font-size:22px">${best.length ? esc(best[0][0]) : "—"}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">${best.length ? Math.round(best[0][1] * 100) + "% mastery" : "answer questions to find out"}</div></div>
+    <div class="dash-card"><h4>Biggest gap</h4><div class="big-num" style="font-size:22px;color:var(--warn)">${best.length > 1 ? esc(best[best.length - 1][0]) : "—"}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">revisit before the real interview</div></div>`;
+  animateGauges();
+
+  // topic bars
+  $("dash-bars").innerHTML = best.slice(0, 8).map(([t, s]) => `
+    <div class="bar-row"><span class="t">${esc(t)}</span>
+      <div class="track"><div class="fill" style="width:${Math.round(s * 100)}%"></div></div>
+      <span class="v">${Math.round(s * 100)}%</span></div>`).join("")
+    || `<div style="font-size:12.5px;color:var(--muted)">No data yet — run an interview to populate topic strength.</div>`;
+
+  // mastery radar (aggregated across all sessions)
+  $("dash-radar").innerHTML = radarSVG(best, "d");
+
+  // progression line
+  renderProgression();
+
+  // session cards
+  $("dash-sessions").innerHTML = history.map((h) => `
+    <div class="session-card" onclick="openHistoryByDate(${h.date})">
+      <div class="s-top"><span class="s-name">${esc(h.name)}</span><span class="s-score" style="color:${h.stats.avg >= 0.6 ? "var(--good)" : h.stats.avg >= 0.4 ? "var(--warn)" : "var(--bad)"}">${Math.round(h.stats.avg * 100)}%</span></div>
+      <div class="s-meta">${esc(h.role)} · ${fmtDate(h.date)} · ${h.stats.questions} questions · ${h.stats.days} days</div>
+      <div class="s-mini"><div style="width:${Math.round(h.stats.avg * 100)}%"></div></div>
+      <div class="s-gaps">${h.gaps.slice(0, 2).map(g => `<span class="tag">${esc(g.split("—")[0].split(":")[0].slice(0, 42))}</span>`).join("")}</div>
+    </div>`).join("") || `
+    <div class="empty-state"><div class="orb">🎙️</div><div style="font-size:15px;color:var(--text);font-weight:600">No interviews yet</div>
+      <p style="margin-top:8px;max-width:380px;margin-inline:auto">Select a candidate, answer 10+ questions, and your prep dashboard builds itself from every session.</p></div>`;
+}
+
+function aggregateTopics() {
+  const agg = {};
+  history.forEach(h => {
+    (h.topics || []).forEach(([t, s]) => {
+      if (!agg[t]) agg[t] = [];
+      agg[t].push(s);
+    });
+  });
+  return Object.entries(agg).map(([t, s]) => [t, s.reduce((a, b) => a + b, 0) / s.length]).sort((a, b) => b[1] - a[1]);
+}
+
+function renderProgression() {
+  const el = $("dash-progress");
+  if (history.length < 1) { el.innerHTML = `<div style="font-size:12.5px;color:var(--muted)">Complete interviews to see your score trend.</div>`; return; }
+  const W = 300, H = 90, pad = 8;
+  const vals = history.map(h => h.stats.avg);
+  const max = Math.max(1, ...vals), min = 0;
+  const pts = vals.map((v, i) => {
+    const x = pad + (i * (W - pad * 2)) / Math.max(vals.length - 1, 1);
+    const y = H - pad - ((v - min) / (max - min)) * (H - pad * 2);
+    return [x, y];
+  });
+  const line = pts.map(p => p.map(v => v.toFixed(1)).join(",")).join(" ");
+  const area = `0,${H} ${line} ${W},${H}`;
+  const dots = pts.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#0b0e17" stroke="#6d8dff" stroke-width="2"${i === pts.length - 1 ? ' class="prog-dot-live prog-glow"' : ""}>
+    <title>Session ${i + 1}: ${Math.round(vals[i] * 100)}%</title></circle>`).join("");
+  el.innerHTML = `<svg width="100%" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="min-width:220px">
+    <polygon points="${area}" fill="rgba(109,141,255,.14)"/>
+    <polyline class="prog-line" points="${line}" fill="none" stroke="url(#progGrad)" stroke-width="2.5" stroke-linecap="round"/>
+    <defs><linearGradient id="progGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#6d8dff"/><stop offset="100%" stop-color="#38e0e0"/></linearGradient></defs>
+    ${dots}
+  </svg>
+  <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:4px">
+    <span>oldest</span><span>avg ${Math.round(vals.reduce((a,b)=>a+b,0)/vals.length * 100)}% · latest ${Math.round(vals[0] * 100)}%</span><span>recent</span>
+  </div>`;
+}
+
+function openHistoryModal(h) {
+  if (!h) return;
+  $("modal").innerHTML = `
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="fb-head" style="margin-bottom:14px">
+        ${ringHTML(h.stats.avg)}
+        <div>
+          <h2>${esc(h.name)} <span style="font-size:14px;color:var(--muted)">· ${esc(h.role)}</span></h2>
+          <div class="sub">${fmtDate(h.date)} · ${h.stats.questions} questions · ${h.stats.days} days covered · ${h.stats.followUps} follow-ups</div>
+        </div>
+      </div>
+      <div class="summary">${esc(h.summary)}</div>
+      <div class="fb-grid">
+        <div class="fb-col strengths"><h3>✅ Strengths</h3><ul>${h.strengths.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>
+        <div class="fb-col gaps"><h3>⚠️ Gaps</h3><ul>${h.gaps.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>
+        <div class="fb-col next"><h3>🎯 Next steps</h3><ul>${h.next.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>
+      </div>
+    </div>`;
+  $("modal").classList.remove("hidden");
+}
+function closeModal() { $("modal").classList.add("hidden"); }
+function openHistoryByDate(ts) {
+  openHistoryModal(history.find(h => h.date === ts));
+}
+$("modal").addEventListener("click", (e) => { if (e.target === $("modal")) closeModal(); });
+
+/* ================= events ================= */
+form.addEventListener("submit", (e) => { e.preventDefault(); sendAnswer(); });
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendAnswer(); }
+});
+input.addEventListener("input", () => {
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight, 150) + "px";
+});
+
+
+
+/* ================= eye-catch: gauge / radar / particles ================= */
+function gaugeHTML(score) {
+  const r = 50, c = 2 * Math.PI * r;
+  return `<div class="gauge" data-score="${score}">
+    <svg width="122" height="122" viewBox="0 0 120 120">
+      <defs><linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6d8dff"/><stop offset="100%" stop-color="#38e0e0"/></linearGradient></defs>
+      <circle cx="60" cy="60" r="${r}" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="9"/>
+      <circle class="g-ring" cx="60" cy="60" r="${r}" fill="none" stroke="url(#gaugeGrad)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c}"/>
+    </svg>
+    <div class="g-val">0%</div>
+  </div>`;
+}
+function animateGauges() {
+  const c = 2 * Math.PI * 50;
+  document.querySelectorAll(".gauge").forEach((g) => {
+    const score = Math.max(0, Math.min(1, parseFloat(g.dataset.score) || 0));
+    const ring = g.querySelector(".g-ring");
+    const val = g.querySelector(".g-val");
+    requestAnimationFrame(() => {
+      ring.style.transition = "stroke-dashoffset 1.3s cubic-bezier(.22,1,.36,1)";
+      ring.style.strokeDashoffset = c * (1 - score);
+    });
+    animateValue(val, 0, Math.round(score * 100), 1200, "%");
+  });
+}
+function radarSVG(topics, uid) {
+  const t = (topics || []).filter(Boolean).slice(0, 6);
+  if (t.length < 3) return `<div style="font-size:12.5px;color:var(--muted);text-align:center;line-height:1.6">Answer questions across 3+ topics<br/>to unlock the mastery radar.</div>`;
+  const W = 210, C = W / 2, R = 72;
+  const pts = t.map(([, s], i) => {
+    const ang = -Math.PI / 2 + (i * 2 * Math.PI) / t.length;
+    return [C + R * Math.max(0.05, s) * Math.cos(ang), C + R * Math.max(0.05, s) * Math.sin(ang)];
+  });
+  const poly = pts.map(p => p.map(v => v.toFixed(1)).join(",")).join(" ");
+  const axes = t.map((item, idx) => {
+    const ang = -Math.PI / 2 + (idx * 2 * Math.PI) / t.length;
+    return `<line x1="${C}" y1="${C}" x2="${C + R * Math.cos(ang)}" y2="${C + R * Math.sin(ang)}" stroke="rgba(255,255,255,.08)"/>`;
+  }).join("");
+  return `<div style="text-align:center">
+    <svg width="${W}" height="${W}" viewBox="0 0 ${W} ${W}">
+      ${[0.25, 0.5, 0.75, 1].map(g => `<circle cx="${C}" cy="${C}" r="${R * g}" fill="none" stroke="rgba(255,255,255,.07)"/>`).join("")}
+      ${axes}
+      <polygon points="${poly}" fill="rgba(109,141,255,.22)" stroke="url(#radarGrad${uid})" stroke-width="2"/>
+      <defs><linearGradient id="radarGrad${uid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6d8dff"/><stop offset="100%" stop-color="#38e0e0"/></linearGradient></defs>
+      ${pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="#7dd3fc"/>`).join("")}
+    </svg>
+    <div class="radar-labels">${t.map(([n, s]) => `<span><b>${esc(n)}</b> ${Math.round(s * 100)}%</span>`).join("")}</div>
+  </div>`;
+}
+function startConstellation(canvas, isVisible) {
+  if (!canvas || !canvas.getContext || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const ctx = canvas.getContext("2d");
+  let W = 0, H = 0;
+  let pts = [];
+  const resize = () => {
+    W = canvas.width = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+    pts = Array.from({ length: 44 }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random() - .5) * .4, vy: (Math.random() - .5) * .4,
+      r: Math.random() * 1.8 + .8,
+    }));
+  };
+  resize();
+  addEventListener("resize", resize);
+  (function loop() {
+    requestAnimationFrame(loop);
+    if (!isVisible()) return;
+    ctx.clearRect(0, 0, W, H);
+    for (const p of pts) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7);
+      ctx.fillStyle = "rgba(140,160,255,.55)"; ctx.fill();
+    }
+    for (let i = 0; i < pts.length; i++) {
+      for (let j = i + 1; j < pts.length; j++) {
+        const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y, d = Math.hypot(dx, dy);
+        if (d < 120) {
+          ctx.strokeStyle = `rgba(120,140,255,${0.16 * (1 - d / 120)})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y); ctx.stroke();
+        }
+      }
+    }
+  })();
+}
+startConstellation(document.getElementById("particles"), () => !document.getElementById("view-dash").classList.contains("hidden"));
+startConstellation(document.getElementById("particles-auth"), () => {
+  const lg = document.getElementById("view-login").classList.contains("hidden");
+  const wc = document.getElementById("view-welcome").classList.contains("hidden");
+  return !(lg && wc);
+});
+
+/* ================= auth ================= */
+const USER_KEY = "aiPrepUser";
+let currentUser = null;
+function loadUser() { try { currentUser = JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch (e) { currentUser = null; } return currentUser; }
+function saveUser(name, email) { currentUser = { name: name.trim(), email: (email || "").trim(), at: Date.now() }; try { localStorage.setItem(USER_KEY, JSON.stringify(currentUser)); } catch (e) {} }
+function clearUser() { currentUser = null; try { localStorage.removeItem(USER_KEY); } catch (e) {} }
+const capWord = (s) => String(s || "").trim().replace(/\b\w/g, (c) => c.toUpperCase());
+const firstNameOf = (n) => capWord((n || "").trim().split(/\s+/)[0] || "there");
+function timeGreeting() { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; }
+
+function showAuth(which) {
+  $("view-login").classList.toggle("hidden", which !== "login");
+  $("view-welcome").classList.toggle("hidden", which !== "welcome");
+  if (which === "login") setTimeout(() => $("login-name").focus(), 120);
+}
+function enterApp(opts) {
+  $("view-login").classList.add("hidden");
+  $("view-welcome").classList.add("hidden");
+  showView("dash");
+  if (opts && opts.picker) setTimeout(openPicker, 320);
+}
+function renderWelcome() {
+  const u = currentUser || { name: "there" };
+  const fn = firstNameOf(u.name);
+  $("welcome-name").textContent = fn;
+  $("switch-name").textContent = fn;
+  $("welcome-sub").textContent = `${timeGreeting()}, ${fn}! Your interview coach is ready — every question is built from your cohort journey, and every result lands on your dashboard.`;
+  const q = history.reduce((a, h) => a + h.stats.questions, 0);
+  const d = history.reduce((a, h) => a + h.stats.days, 0);
+  $("welcome-stats").innerHTML = `
+    <div class="w-stat"><b>${history.length}</b>practice session${history.length === 1 ? "" : "s"}</div>
+    <div class="w-stat"><b>${q}</b>questions answered</div>
+    <div class="w-stat"><b>${d}</b>days covered</div>`;
+}
+function signOut() {
+  clearUser();
+  // reset all interview state so the next user starts completely fresh
+  pickedCandidate = null;
+  candidate = null;
+  sessionId = null;
+  gen++;
+  renderPickerTriggers();
+  $("who").textContent = "Select a candidate";
+  $("role").textContent = "";
+  messagesEl.innerHTML = "";
+  $("chips").innerHTML = "";
+  $("mastery").innerHTML = "";
+  $("live-stats").innerHTML = "";
+  $("qCount").textContent = "— / —";
+  $("qBar").style.width = "0%";
+  input.disabled = true;
+  sendBtn.disabled = true;
+  $("login-form").reset();
+  showAuth("login");
+}
+
+$("login-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if ($("login-hp").value) return; // honeypot filled → autofill/bot noise, ignore
+  const name = $("login-name").value.trim();
+  if (name.length < 2) { toast("Please enter your name to continue."); $("login-name").focus(); return; }
+  saveUser(name, $("login-email").value);
+  renderWelcome();
+  showAuth("welcome");
+  if ("speechSynthesis" in window) speak(`Welcome, ${firstNameOf(name)}. Ready to sharpen your interview skills?`);
+});
+$("btn-start-iv").addEventListener("click", () => enterApp({ picker: true }));
+$("btn-explore").addEventListener("click", () => enterApp({}));
+$("btn-switch").addEventListener("click", signOut);
+$("btn-signout").addEventListener("click", signOut);
+
+/* ================= boot ================= */
+loadRoster();
+renderDashboard();
+showView("dash");
+if (loadUser()) { renderWelcome(); showAuth("welcome"); }
+else showAuth("login");
+setBusy(true);
+</script>
+</body>
+</html>
